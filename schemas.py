@@ -18,18 +18,23 @@ class Item(ItemBase):
         orm_mode = True
 
 
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     email: str
-
-
-class UserCreate(UserBase):
+    userName: str
     password: str
 
 
-class User(UserBase):
+class User(BaseModel):
     id: int
     is_active: bool
+    email: str
+    userName: str
     items: list[Item] = []
 
     class Config:
         orm_mode = True
+
+
+class LoginRequestDetails(BaseModel):
+    userName: str
+    password: str
