@@ -3,11 +3,23 @@ from sqlalchemy.orm import Session
 
 import crud, models, schemas
 from database import SessionLocal, engine
+from fastapi.middleware.cors import CORSMiddleware
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency
 def get_db():
@@ -20,12 +32,18 @@ def get_db():
 
 @app.post("/login")
 def login(loginRequestDetails: schemas.LoginRequestDetails, db: Session = Depends(get_db)):
-    return []
+    if crud.verify_user(db, loginRequestDetails.userName, loginRequestDetails.password):
+        return {
+            "details": "logged in",
+            "token": crud.generate_token(db, loginRequestDetails.userName)
+        }
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @app.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
+    db_user = crud.get_user_by_userName(db, userName=user.userName)
     if db_user:
         raise HTTPException(status_code=400, detail="UserName already registered")
     return crud.create_user(db=db, user=user)

@@ -12,7 +12,7 @@ class User(Base):
     userName = Column(String, unique=True, index=True)
     password = Column(String)
     is_active = Column(Boolean, default=True)
-
+    loginToken = Column(String, default="")
     items = relationship("Item", back_populates="owner")
 
 
