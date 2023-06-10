@@ -10,7 +10,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000",
+    "http://localhost:3000"
 ]
 
 app.add_middleware(
@@ -41,12 +41,13 @@ def login(loginRequestDetails: schemas.LoginRequestDetails, db: Session = Depend
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
-@app.post("/users/", response_model=schemas.User)
+@app.post("/signup", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_userName(db, userName=user.userName)
     if db_user:
         raise HTTPException(status_code=400, detail="UserName already registered")
-    return crud.create_user(db=db, user=user)
+    else:
+        return crud.create_user(db, user)
 
 
 @app.get("/users/", response_model=list[schemas.User])
@@ -63,14 +64,14 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@app.post("/users/{user_id}/items/", response_model=schemas.Item)
+@app.post("/items/", response_model=schemas.Item)
 def create_item_for_user(
     user_id: int, item: schemas.ItemCreate, db: Session = Depends(get_db)
 ):
     return crud.create_user_item(db=db, item=item, user_id=user_id)
 
 
-@app.get("/items/", response_model=list[schemas.Item])
+@app.get("/users/{user_id}/items/", response_model=list[schemas.Item])
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = crud.get_items(db, skip=skip, limit=limit)
     return items

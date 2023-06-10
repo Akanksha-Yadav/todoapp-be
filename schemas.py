@@ -19,7 +19,7 @@ class Item(ItemBase):
 
 
 class UserCreate(BaseModel):
-    email: str
+    # email: str
     userName: str
     password: str
 
@@ -29,7 +29,6 @@ class User(BaseModel):
     is_active: bool
     email: str
     userName: str
-    items: list[Item] = []
 
     class Config:
         orm_mode = True

@@ -19,12 +19,12 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_user(db: Session, user: schemas.UserCreate) -> models.User:
-    password = user.password
-    db_user = models.User(email=user.email, userName=user.userName, password=password)
+    db_user = models.User(email=user.userName, userName=user.userName, password=user.password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+    
 
 
 def get_items(db: Session, skip: int = 0, limit: int = 100):
@@ -32,7 +32,7 @@ def get_items(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_user_item(db: Session, item: schemas.ItemCreate, user_id: int):
-    db_item = models.Item(**item.dict(), owner_id=user_id)
+    db_item = models.Item(title=item.title, owner_id=user_id, description=item.description)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
