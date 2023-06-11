@@ -1,5 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
+import uvicorn
 
 import crud, models, schemas
 from database import SessionLocal, engine
@@ -30,18 +31,20 @@ def get_db():
         db.close()
 
 
-@app.post("/login")
+@app.post("/login/")
 def login(loginRequestDetails: schemas.LoginRequestDetails, db: Session = Depends(get_db)):
-    if crud.verify_user(db, loginRequestDetails.userName, loginRequestDetails.password):
+    user = crud.verify_user(db, loginRequestDetails.userName, loginRequestDetails.password)
+    if user:
         return {
             "details": "logged in",
+            "user_id": user.id,
             "token": crud.generate_token(db, loginRequestDetails.userName)
         }
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
-@app.post("/signup", response_model=schemas.User)
+@app.post("/signup/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_userName(db, userName=user.userName)
     if db_user:
@@ -56,7 +59,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return users
 
 
-@app.get("/users/{user_id}", response_model=schemas.User)
+@app.get("/users/{user_id}/", response_model=schemas.User)
 def read_user(user_id: int, db: Session = Depends(get_db)):
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
@@ -64,7 +67,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@app.post("/items/", response_model=schemas.Item)
+@app.post("/{user_id}/items/", response_model=schemas.Item)
 def create_item_for_user(
     user_id: int, item: schemas.ItemCreate, db: Session = Depends(get_db)
 ):
@@ -72,6 +75,17 @@ def create_item_for_user(
 
 
 @app.get("/users/{user_id}/items/", response_model=list[schemas.Item])
-def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    items = crud.get_items(db, skip=skip, limit=limit)
+def read_items(user_id: int, db: Session = Depends(get_db)):
+    items = crud.get_items(db, user_id)
     return items
+
+@app.delete("/items/{item_id}/")
+def remove_item(item_id: int, db: Session = Depends(get_db)):
+    crud.delete_item(item_id ,db)
+    return {
+        "status":"item deleted"
+    }
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
