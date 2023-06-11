@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Header
 from sqlalchemy.orm import Session
 import uvicorn
 
@@ -30,6 +30,11 @@ def get_db():
     finally:
         db.close()
 
+
+def is_valid_token():
+    accept_language = Header(None)
+    print("header", accept_language)
+    return True
 
 @app.post("/login/")
 def login(loginRequestDetails: schemas.LoginRequestDetails, db: Session = Depends(get_db)):
@@ -69,18 +74,29 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 
 @app.post("/{user_id}/items/", response_model=schemas.Item)
 def create_item_for_user(
-    user_id: int, item: schemas.ItemCreate, db: Session = Depends(get_db)
+    user_id: int, item: schemas.ItemCreate, db: Session = Depends(get_db), token:str=Header(None)
 ):
+    user_token=crud.verify_token(user_id,token,db)
+    if user_token is None:
+        raise HTTPException(status_code=401, detail="unauthorized")
     return crud.create_user_item(db=db, item=item, user_id=user_id)
 
 
 @app.get("/users/{user_id}/items/", response_model=list[schemas.Item])
-def read_items(user_id: int, db: Session = Depends(get_db)):
+def read_items(user_id: int, db: Session = Depends(get_db),token:str=Header(None)
+):
+    user_token=crud.verify_token(user_id,token,db)
+    if user_token is None:
+        raise HTTPException(status_code=401, detail="unauthorized")
     items = crud.get_items(db, user_id)
     return items
 
-@app.delete("/items/{item_id}/")
-def remove_item(item_id: int, db: Session = Depends(get_db)):
+@app.delete("/{user_id}/items/{item_id}/")
+def remove_item(user_id: int, item_id: int, db: Session = Depends(get_db),token:str=Header(None)
+):
+    user_token=crud.verify_token(user_id,token,db)
+    if user_token is None:
+        raise HTTPException(status_code=401, detail="unauthorized")
     crud.delete_item(item_id ,db)
     return {
         "status":"item deleted"

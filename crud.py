@@ -24,7 +24,6 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     db.commit()
     db.refresh(db_user)
     return db_user
-    
 
 
 def get_items(db: Session, user_id: int):
@@ -37,6 +36,12 @@ def create_user_item(db: Session, item: schemas.ItemCreate, user_id: int):
     db.commit()
     db.refresh(db_item)
     return db_item
+
+
+def verify_token(user_id: int, token: str,db: Session):
+    user_token = db.query(models.User).filter(models.User.id == user_id, models.User.loginToken == token).first()
+    return user_token
+
 
 
 def delete_item(item_id: int, db: Session):
